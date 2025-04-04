@@ -11,7 +11,7 @@ import (
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("Is it prime?!")
-	fmt.Println("Choose a number > 0 and < 18,446,744,073,709,551,615")
+	fmt.Println("Choose a number > 2 and < 18,446,744,073,709,551,615")
 	fmt.Println("---------------------")
 	for {
 		// input
@@ -42,6 +42,11 @@ func main() {
 }
 
 func isItPrime(num uint64) bool {
+	if num%2 == 0 {
+		return false
+	}
+
+	// optimal witnesses
 	var witnesses []int
 	switch {
 	case num < 2047:
@@ -71,8 +76,41 @@ func isItPrime(num uint64) bool {
 	default:
 		witnesses = []int{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37}
 	}
-
 	fmt.Println(witnesses)
 
-	return true
+	// find m and d for n^m*d+1 = num
+	m := 0
+	d := num - 1
+	for d%2 == 0 {
+		d = d / 2
+		m++
+	}
+	fmt.Printf("2^%d*%d + 1\n", m, d)
+
+	// a^d = 1%n - for each witness
+	isPrime := true
+	for _, wit := range witnesses {
+
+		// optimization so we dont have to calculate a^d
+		runningTotal := uint64(1)
+		for i := uint64(0); i < d; i++ {
+			// runningTotal = (runningTotal * uint64(wit)) % num
+			runningTotal = runningTotal * uint64(wit)
+		}
+		// fmt.Printf("runningTotal: %d^%d = %d\n", wit, d, runningTotal)
+
+		// ******* we may need to do some checks with other values of 2^m and d **********
+
+		runningTotal = runningTotal % num
+		fmt.Printf("%d^%d mod %d = %d\n", wit, d, num, runningTotal)
+
+		if runningTotal != 1 || runningTotal != num-1 {
+			// test := (uint64(wit) ^ d) % num
+			// if test != 1 || test != num-1 {
+			isPrime = false
+			break
+		}
+	}
+
+	return isPrime
 }
